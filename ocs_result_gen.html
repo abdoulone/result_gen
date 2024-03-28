@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Result Generator</title>
+<style>
+  body {
+    font-family: 'Times New Roman', Times, serif, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f2f2f2;
+  }
+  table{
+    width: 100%;
+    border: 1px solid;
+  }
+  table>tbody>tr>th{
+    background-color: rgb(130, 6, 130);
+    color: #fff;
+  }
+  table, th, td {
+  border: 1px solid;
+}
+.smaller-text{
+  font-size: 12px;
+  color: black;
+  margin: 0px 0px 0px 0px;
+}
+  header {
+    background-color: #fff;
+    color: #fff;
+    padding: 20px 0;
+    text-align: center;
+  }
+  header>h2 {
+    color: rgb(130, 6, 130);
+  }
+  #main-head {
+    background-color: rgb(130, 6, 130);
+  }
+  .sub-header {
+    font-size: 18px;
+    font-style: italic;
+  }
+  .container {
+  /* background-image: url('logo.jpg');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: 450px; */
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  .containerr{
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  input[type="file"] {
+    display: none;
+  }
+  .custom-file-upload {
+    border: 1px solid #ccc;
+    display: inline-block;
+    padding: 6px 12px;
+    cursor: pointer;
+    background-color: rgb(130, 6, 130);
+    color: #fff;
+    border-radius: 5px;
+  }
+  
+  footer {
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+  }
+
+  /* Add new styles for individual results */
+  .student-result {
+    margin-top: 20px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+    .student-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  font-size: 14px;
+  text-align: left;
+  /* border: solid 1px black; */
+}
+
+.info-column {
+  padding: 0 10px;
+  margin: -15px 0px 0px 0px;
+  border: solid 1px black;
+
+}
+
+    .small-text{
+    font-size: 16px;
+    color: black;}
+
+    /*Table result details styling*/
+
+    .result-details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.result-details-table th, .result-details-table td {
+  border: 1px solid #ccc;
+  padding: 10px;
+  text-align: center;
+}
+
+.result-details-table th {
+  background-color: rgb(130, 6, 130);
+  color: #fff;
+}
+h1{
+  margin: 0px 0px 0px 0px;
+  color: rgb(130, 6, 130);
+}
+.result-details-table tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.result-details-table tr:hover {
+  background-color: #e0e0e0;
+}
+td{
+  text-align: left;
+}
+
+/*Table styling*/
+#affectiveTraits {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+#affectiveTraits th, #affectiveTraits td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+#affectiveTraits th {
+  background-color: rgb(130, 6, 130);
+  color: white;
+}
+
+#affectiveTraits tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+#affectiveTraits tr:hover {
+  background-color: #ddd;
+}
+#generate-pdf-btn{
+  background-color: lightgreen;
+  border: 1px solid #ccc;
+  padding: 6px 12px;
+}
+
+</style>
+</head>
+<body>
+<header id="main-head">
+  <h1 style="color: white;"> <img src="logo.jpg" style="width:50px; height:50px border solid 0px; border-radius: 50px;"> Ogiba Comprehensive School</h1>
+  <p class="sub-header">Generate Student Results</p>
+</header>
+<div class="containerr">
+  <h2>Select an XLS or CSV file to generate student results from:</h2>
+  <label for="file-upload" class="custom-file-upload">
+    Choose File
+  </label>
+  <input id="file-upload" type="file" accept=".xls,.xlsx,.csv"> <br>
+  <button id="generate-pdf-btn">Generate PDF</button>
+</div>
+
+<!-- Individual results section -->
+<div id="individual-results"></div>
+
+<footer>
+  <p>&copy; 2024 Student Results App</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.0/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.4/jspdf.min.js"></script>
+<script>
+ 
+// Function to handle file upload
+document.getElementById('file-upload').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) {
+    return;
+  }
+
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var data = new Uint8Array(e.target.result);
+    var workbook = XLSX.read(data, { type: 'array' });
+
+    // Process General Details sheet
+    var generalSheetName = workbook.SheetNames[0]; // Assuming "General Details" sheet is first
+    var generalSheet = workbook.Sheets[generalSheetName];
+    var generalData = XLSX.utils.sheet_to_json(generalSheet, { header: 1 });
+
+    // Get data from the 2nd row
+    var generalDetails = generalData[1];
+    // Process Individual Details sheet
+    var individualSheetName = workbook.SheetNames[1]; // Assuming "Individual Details" sheet is second
+    var individualSheet = workbook.Sheets[individualSheetName];
+    var individualData = XLSX.utils.sheet_to_json(individualSheet, { header: 1 });
+
+    // Remove the first row (header)
+    individualData.shift();
+
+    // Process individual details
+    var studentData = [];
+    var currentStudent = {};
+    individualData.forEach(function(row) {
+      var studentName = row[0];
+      var subjectIndex = 1; // Start index for subjects
+      if (studentName) {
+        // Start a new student record
+        if (Object.keys(currentStudent).length > 0) {
+          // Push the previous student record
+          studentData.push(currentStudent);
+        }
+        currentStudent = { studentName: studentName, subjects: [] };
+      }
+      // Process subjects and scores
+      while (subjectIndex < row.length) {
+        var subjectData = {
+          subject: row[subjectIndex],
+          assessmentScore: row[subjectIndex + 1],
+          examScore: row[subjectIndex + 2]
+        };
+        currentStudent.subjects.push(subjectData);
+        subjectIndex += 3; // Move to the next subject
+      }
+    });
+    // Push the last student record
+    if (Object.keys(currentStudent).length > 0) {
+      studentData.push(currentStudent);
+    }
+
+    // Combine data from both sheets into a single object
+    var jsonData = {
+      generalDetails: generalDetails,
+      studentData: studentData
+    };
+
+    // Log the JSON data to console
+    console.log(jsonData);
+    // create comment element
+    
+    function processSheet3(workbook) {
+  // Assuming Sheet 3 is the third sheet in the workbook
+  var sheetName = workbook.SheetNames[2];
+  var sheet = workbook.Sheets[sheetName];
+  
+  // Convert sheet data to JSON format
+  var jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+  
+  // Extract data from JSON and structure it appropriately
+  var studentAttendance = [];
+  var teacherComments = [];
+  var affectiveTraits = [];
+
+  // Loop through each row of the JSON data
+  jsonData.forEach(function(row, index) {
+    // Skip the first row (header)
+    if (index === 0) return;
+
+    // Extract data from each row
+    var studentName = row[0];
+    var attendance = row[1];
+    var comment = row[2];
+    var traits = row.slice(3); // Extract affective traits starting from the 4th column
+
+    // Build student attendance object
+    var attendanceObj = { studentName: studentName, attendance: attendance };
+    studentAttendance.push(attendanceObj);
+
+    // Build teacher's comment object
+    var commentObj = { studentName: studentName, comment: comment };
+    teacherComments.push(commentObj);
+
+    // Build affective traits object
+    var traitsObj = { studentName: studentName, traits: traits };
+    affectiveTraits.push(traitsObj);
+  });
+
+  // Combine the data into a single object
+  var sheet3Data = {
+    studentAttendance: studentAttendance,
+    teacherComments: teacherComments,
+    affectiveTraits: affectiveTraits
+  };
+
+  // Return the structured JSON data
+  return sheet3Data;
+  console.log(sheet3Data);
+}
+
+    // Function to calculate grade based on total score
+    function calculateGrade(totalScore) {
+      if (totalScore >= 70) {
+        return 'A';
+      } else if (totalScore >= 60) {
+        return 'B';
+      } else if (totalScore >= 50) {
+        return 'C';
+      } else if (totalScore >= 45) {
+        return 'D';
+      } else if (totalScore >= 40) {
+        return 'E';
+      } else {
+        return 'F';
+      }
+    }
+
+    // Function to get remarks based on grade
+    function getRemarks(grade) {
+      switch (grade) {
+        case 'A':
+          return 'Excellent';
+        case 'B':
+          return 'Very Good';
+        case 'C':
+          return 'Good';
+        case 'D':
+          return 'Average';
+        case 'E':
+          return 'Pass';
+        default:
+          return 'Work in Progress';
+      }
+    }
+    
+    // Loop over each student data
+    studentData.forEach(function(student) {
+      var totalScoreSum = 0;
+      // Calculate total score for the student
+      student.subjects.forEach(function(subject) {
+        totalScoreSum += parseInt(subject.assessmentScore) + parseInt(subject.examScore);
+      });
+      // Calculate average
+      var average = totalScoreSum / student.subjects.length;
+    
+      // Create a container for the individual result
+      var resultContainer = document.createElement('div');
+      resultContainer.classList.add('container');
+      
+
+      // Add the header and other elements to the result container...
+      // Your code to generate the result container goes here...
+      resultContainer.innerHTML = `
+        <header>
+          <!-- School Name -->
+          <div><img src="logo.jpg" style="width:50px; height:50px; border: solid 0px; border-radius: 50px;" ></div>
+          <h1 style="font-family: 'Arial Black';">OGIBA <span>COMPREHENSIVE SCHOOL</span></h1>
+          <!-- School Contact Information -->
+          <p class="smaller-text">3330 Danyaro Street, Link 19 Off Forestry Road, Dorayi Babba Gwale Kano</p>
+          <p class="smaller-text">Phone: 08069475230 | Email: ogiba629@gmail.com
+            <h3 style="font-family: 'Arial Black'; color: green; margin: 0px 0px 0px 0px;">REPORT SHEET</h3>
+        </header>
+      `;
+      // Generate the student information section
+      var studentInfo = document.createElement('div');
+      studentInfo.classList.add('student-info');
+      studentInfo.innerHTML = `
+        <div class="info-column">
+          <p id="stud-name"><strong>Name:</strong> ${student.studentName}</p>
+          <p><strong>Class:</strong> ${generalDetails[0]}</p>
+          <p><strong>Closing Date:</strong> ${generalDetails[3]}</p>
+        </div>
+        <div class="info-column">
+          <p><strong>Term:</strong> ${generalDetails[1]}</p>
+          <p><strong>Session::</strong>${generalDetails[2]}</p>
+          <p><strong>Resumption Date:</strong> ${generalDetails[4]}</p>
+        </div>
+      `;
+      resultContainer.appendChild(studentInfo);
+
+      // Generate the result details table
+      var resultTable = document.createElement('table');
+      resultTable.innerHTML = `
+        <tr>
+          <th>Subject</th>
+          <th>CA</th>
+          <th>Exam</th>
+          <th>Total</th>
+          <th>Grade</th>
+          <th>Remarks</th>
+        </tr>
+      `;
+      
+      // Loop over each subject for the student
+      student.subjects.forEach(function(subject) {
+        //store scores in a list
+        var indTotalSum = [];
+        // Calculate total score and grade
+        var totalScore = parseInt(subject.assessmentScore) + parseInt(subject.examScore);
+        var grade = calculateGrade(totalScore);
+        var remarks = getRemarks(grade);
+        // Calculate the sum of totalScore
+        var totalScoreSum = 0;
+        // Loop over each student data
+        studentData.forEach(function(student) {
+          // Initialize total score sum for the current student
+          var totalScoreSum = 0;
+          
+          // Loop over each subject for the student
+          student.subjects.forEach(function(subject) {
+            // Calculate total score for the subject and add it to the sum
+            var totalScore = parseInt(subject.assessmentScore) + parseInt(subject.examScore);
+            totalScoreSum += totalScore;
+          });
+          indTotalSum.push(totalScoreSum);
+                    
+        });
+        
+        // Add a row for the subject in the table
+        resultTable.innerHTML += `
+          <tr>
+            <td>${subject.subject}</td>
+            <td>${subject.assessmentScore}</td>
+            <td>${subject.examScore}</td>
+            <td>${totalScore}</td>
+            <td>${grade}</td>
+            <td>${remarks}</td>
+          </tr>
+        `;
+      });
+
+// write function for comment
+
+      // Update the "AveragePH" paragraph to display total score and average
+      var tComment = document.createElement('p');
+      tComment.innerHTML = `Teacher's Comment`;
+      var averagePH = document.createElement('p');
+      averagePH.classList.add('averagePH');
+      averagePH.innerHTML = `<p><strong>Total Score:</strong> ${totalScoreSum} || <strong>Child's Average:</strong> ${average.toFixed(2)} || <strong>Class Average:</strong> ${generalDetails[5]}% </p>`;
+      
+      var averageToFix = average.toFixed(2);
+      
+      function commentCreator() {
+      if (averageToFix >= 70) {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> Bravo! An Excellent Result! Keep it up</p>`;
+      } else if (averageToFix >= 60) {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> <u>A very good result! Well done!</u></p>`;
+      } else if (averageToFix >= 50) {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> <u>A good result. Looking forward to see you improve.</u></p>`;
+      } else if (averageToFix >= 45) {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> <u>An average result! Improve in your weak subjects</u></p>`;
+      } else if (averageToFix >= 40) {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> <u>A pass result. You can do better, trust in yourself.</u></p>`;
+      } else {
+        tComment.innerHTML =`<p><strong>Teacher's Comment:</strong> <u>A work in progress. One step at a time, you will do great!</u></p>`;
+      }
+    }
+    commentCreator();
+      resultContainer.appendChild(resultTable);
+      resultContainer.appendChild(averagePH);
+
+      // Create Key for Grading
+       var gradeKey = document.createElement('p');
+      gradeKey.classList.add('small-text');
+      gradeKey.innerHTML = `<center><strong>KEY</strong> <br>70-100 = A, 60 - 69 = B, 50-59 = C, 45-49 = D, 40-44 = E, 0-39 = Needs Improvement</center>`;
+      // Append to result details
+        resultContainer.appendChild(gradeKey);
+        resultContainer.appendChild(tComment);
+// Create a table element
+var table = document.createElement('table');
+table.id = 'affectiveTraits';
+
+// Create table header row
+var headerRow = table.insertRow();
+// Add table headers
+var headers = ['Affective Assessment', 'A', 'B', 'C', 'D', 'Affective Assessment', 'A', 'B', 'C', 'D'];
+headers.forEach(function(headerText) {
+  var th = document.createElement('th');
+  th.textContent = headerText;
+  headerRow.appendChild(th);
+});
+
+// Create a table element
+var table = document.createElement('table');
+table.id = 'affectiveTraits';
+
+// Create table header row
+var headerRow = table.insertRow();
+// Add table headers
+var headers = ['Affective Assessment', 'A', 'B', 'C', 'D', 'Affective Assessment', 'A', 'B', 'C', 'D'];
+headers.forEach(function(headerText) {
+  var th = document.createElement('th');
+  th.textContent = headerText;
+  headerRow.appendChild(th);
+});
+
+// Create table rows
+for (var i = 0; i < 5; i++) {
+  var row = table.insertRow();
+  // Add table cells
+  for (var j = 0; j < 10; j++) {
+    var cell = row.insertCell();
+    if (j === 0 && i === 0) {
+      // Add "Attendance in class" in the first column of the first row
+      cell.textContent = 'Attendance in class';
+    } else if (j === 0 && i > 0 && i < 5) {
+      // Add other specialCellTexts in the first column starting from the 2nd row until the 5th row
+      var specialCellTexts = ['Honesty', 'Obedience', 'Punctuality', 'Sociability'];
+      cell.textContent = specialCellTexts[i - 1];
+    } else if (j === 0 && i === 5) {
+      // Add "Fluency" in the first column of the 6th row
+      cell.textContent = 'Fluency';
+    } else if (j === 0 && i > 5) {
+      // Add remaining specialCellTexts in the first column starting from the 7th row
+      var specialCellTexts = ['Neatness', 'Handwriting', 'Sense of responsibility', 'Sport'];
+      cell.textContent = specialCellTexts[i - 6];
+    } else if (j === 5 && i < 6) {
+      // Add special cells for the 6th column excluding the last row
+      var specialCellTexts = ['Fluency', 'Neatness', 'Handwriting', 'Sense of responsibility', 'Sport'];
+      cell.textContent = specialCellTexts[i];
+    } else {
+      // Clear text content of cells in the last row
+      if (i === 5) {
+        cell.textContent = '';
+      }
+    }
+  }
+}
+// Function to randomly select a color based on the affective assessment category
+function getRandomColor(category) {
+  switch (category) {
+    case 'A':
+      return 'lightgreen';
+    case 'B':
+      return 'skyblue';
+    case 'C':
+      return 'orange';
+    case 'D':
+      return 'red';
+    default:
+      return '';
+  }
+}
+
+// Function to randomly select a color based on the affective assessment category
+function getRandomColor(category) {
+  switch (category) {
+    case 'A':
+      return 'lightgreen';
+    case 'B':
+      return 'skyblue';
+    case 'C':
+      return 'orange';
+    case 'D':
+      return 'red';
+    default:
+      return '';
+  }
+}
+
+// Loop through each row
+for (var i = 1; i < table.rows.length; i++) {
+  var row = table.rows[i];
+  var emptyCellIndices = [];
+  
+  // Find empty cells in the row after specialCellText
+  for (var j = 1; j < row.cells.length; j++) {
+    var cell = row.cells[j];
+    var category = headers[j];
+    if (cell.textContent === '' && category !== '') {
+      emptyCellIndices.push(j);
+    }
+  }
+  
+  // Randomly select two empty cells to color, prioritizing categories A, B, and C
+  var randomIndices = [];
+  var prioritize = ['A', 'B', 'C'];
+  var prevColoredIndices = [];
+  while (randomIndices.length < 2 && emptyCellIndices.length > 0) {
+    var randomCategoryIndex = Math.floor(Math.random() * prioritize.length);
+    var priorityCategory = prioritize.splice(randomCategoryIndex, 1)[0];
+    var eligibleCells = emptyCellIndices.filter(index => headers[index] === priorityCategory && !prevColoredIndices.some(prevIndex => Math.abs(index - prevIndex) <= 2));
+    if (eligibleCells.length > 0) {
+      var randomIndex = Math.floor(Math.random() * eligibleCells.length);
+      var selectedCellIndex = eligibleCells.splice(randomIndex, 1)[0];
+      randomIndices.push(selectedCellIndex);
+      prevColoredIndices.push(selectedCellIndex);
+    }
+  }
+  
+  // Color the selected empty cells
+  randomIndices.forEach(function(index) {
+    var cell = row.cells[index];
+    var category = headers[index];
+    var color = getRandomColor(category);
+    cell.style.backgroundColor = color;
+  });
+}
+
+  // Append the table to the resultContainer
+  resultContainer.appendChild(table);
+  var htSign = document.createElement('p');
+  htSign.innerHTML = `<strong>Head Teacher's Sign:</strong>______________________________________________________`;  
+  resultContainer.appendChild(htSign);
+      // Append the individual result container to the document body
+      document.body.appendChild(resultContainer);
+    
+      // Append the result container to the document body
+      document.body.appendChild(resultContainer);
+    });
+  };
+  reader.readAsArrayBuffer(file);
+});
+
+// Your code for generating PDF goes here...
+document.getElementById('generate-pdf-btn').addEventListener('click', function() {
+  // Create a new jsPDF instance
+  var doc = new jsPDF();
+  
+  // Set the options for html2canvas
+  var options = {
+    scale: 2, // Increase scale for higher resolution
+    useCORS: true // Use CORS to avoid "tainted canvas" issue
+  };
+  
+  // Loop over each individual result container
+  document.querySelectorAll('.container').forEach(function(container, index) {
+    // Only add a page break if it's not the first container
+    if (index !== 0) {
+      doc.addPage();
+    }
+    
+    // Convert the container to a canvas
+    html2canvas(container, options).then(function(canvas) {
+      // Convert canvas to an image
+      var imgData = canvas.toDataURL('image/jpg', 1.0);
+      
+      // Add the image to the PDF
+      doc.addImage(imgData, 'JPEG', 10, 10, 190, 277, undefined, 'FAST'); // A4 dimensions: 210x297 mm (approx. 190x277 px at 72 DPI)
+      
+      // Add a page break after each individual result
+      if (index !== document.querySelectorAll('.container').length - 1) {
+        doc.addPage();
+      } else {
+        // If it's the last container, save the PDF
+        doc.save('individual_results.pdf');
+      }
+    });
+  });
+});
+
+
+</script>
+</body>
+</html>
